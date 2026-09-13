@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.idea/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+*.zip
+!terraform/modules/app/placeholder.zip

@@ -1,0 +1,19 @@
+module "myapp" {
+  providers = { aws = aws, aws.us_east_1 = aws.us_east_1 }
+  source    = "../modules/app"
+
+  account_id        = var.account_id
+  alerts_topic_arn  = var.alerts_topic_arn
+  aws_region        = var.aws_region
+  github_subject    = "repo:poly-glot@2133299/myapp@123456789"
+  name              = "myapp"
+  oidc_provider_arn = var.oidc_provider_arn
+  sites             = var.sites
+  table             = var.table
+
+  key_prefix = "myapp#"
+
+  functions = {
+    api = { url = "api" }
+  }
+}

@@ -1,0 +1,8 @@
+alert_email = "you@example.org"
+aws_region  = "eu-west-2"
+
+donation_admin_emails          = ["fundraising@example.org"]
+donation_console_url           = "https://d111111abcdef8.cloudfront.net/admin.html"
+donation_domain_live           = false
+donation_stripe_secret_key     = "sk_test_..."
+donation_stripe_webhook_secret = "whsec_..."
