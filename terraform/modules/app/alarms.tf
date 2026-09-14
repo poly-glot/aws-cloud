@@ -97,9 +97,10 @@ resource "aws_cloudwatch_metric_alarm" "custom" {
   alarm_description   = each.value.description
   alarm_name          = "${var.name}-${each.key}"
   comparison_operator = each.value.comparison_operator
+  dimensions          = each.value.dimensions
   evaluation_periods  = each.value.evaluation_periods
   metric_name         = each.value.metric_name
-  namespace           = var.name
+  namespace           = coalesce(each.value.namespace, var.name)
   ok_actions          = [var.alerts_topic_arn]
   period              = each.value.period
   statistic           = each.value.statistic

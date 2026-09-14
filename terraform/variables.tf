@@ -44,3 +44,16 @@ variable "donation_stripe_webhook_secret" {
   sensitive = true
   type      = string
 }
+
+variable "shorten_public_base_url" {
+  default     = ""
+  description = "Origin of the short links the shorten mgmt function hands out, https://<distribution_domain> or the custom domain; set after the first apply, once the distribution has a name. Empty makes the function fall back to the request host, which behind CloudFront is the raw function URL"
+  type        = string
+}
+
+variable "shorten_origin_verify" {
+  default     = ""
+  description = "Shared secret CloudFront sends as X-Origin-Verify to the shorten functions, which refuse any request without it"
+  sensitive   = true
+  type        = string
+}

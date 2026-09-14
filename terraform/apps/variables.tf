@@ -6,6 +6,21 @@ variable "alerts_topic_arn" {
   type = string
 }
 
+variable "analytics" {
+  type = object({
+    athena_workgroup     = string
+    athena_workgroup_arn = string
+    glue_arns            = list(string)
+    glue_database        = string
+    glue_table           = string
+    log_destination_arn  = string
+    logs_bucket          = string
+    logs_bucket_arn      = string
+    results_bucket       = string
+    results_bucket_arn   = string
+  })
+}
+
 variable "aws_region" {
   type = string
 }
@@ -36,6 +51,15 @@ variable "donation_stripe_secret_key" {
 variable "donation_stripe_webhook_secret" {
   sensitive = true
   type      = string
+}
+
+variable "shorten_origin_verify" {
+  sensitive = true
+  type      = string
+}
+
+variable "shorten_public_base_url" {
+  type = string
 }
 
 variable "sites" {

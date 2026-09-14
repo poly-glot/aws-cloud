@@ -1,3 +1,44 @@
+locals {
+  analytics_statements = var.analytics == null ? [] : [
+    {
+      actions = [
+        "athena:GetQueryExecution",
+        "athena:GetQueryResults",
+        "athena:GetWorkGroup",
+        "athena:StartQueryExecution",
+      ]
+      resources = [var.analytics.athena_workgroup_arn]
+    },
+    {
+      actions = [
+        "glue:GetDatabase",
+        "glue:GetDatabases",
+        "glue:GetPartition",
+        "glue:GetPartitions",
+        "glue:GetTable",
+        "glue:GetTables",
+      ]
+      resources = var.analytics.glue_arns
+    },
+    {
+      actions   = ["s3:GetBucketLocation", "s3:GetObject", "s3:ListBucket"]
+      resources = [var.analytics.logs_bucket_arn, "${var.analytics.logs_bucket_arn}/*"]
+    },
+    {
+      actions = [
+        "s3:AbortMultipartUpload",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListMultipartUploadParts",
+        "s3:PutObject",
+      ]
+      resources = [var.analytics.results_bucket_arn, "${var.analytics.results_bucket_arn}/*"]
+    },
+  ]
+}
+
 data "aws_iam_policy_document" "runtime_trust" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -12,6 +53,8 @@ data "aws_iam_policy_document" "runtime_trust" {
 data "aws_iam_policy_document" "runtime" {
   statement {
     actions = [
+      "dynamodb:BatchGetItem",
+      "dynamodb:BatchWriteItem",
       "dynamodb:DeleteItem",
       "dynamodb:GetItem",
       "dynamodb:PutItem",
@@ -35,6 +78,15 @@ data "aws_iam_policy_document" "runtime" {
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/${var.name}-*"]
+  }
+
+  dynamic "statement" {
+    for_each = local.analytics_statements
+
+    content {
+      actions   = statement.value.actions
+      resources = statement.value.resources
+    }
   }
 }
 
@@ -97,6 +149,20 @@ data "aws_iam_policy_document" "deploy" {
   statement {
     actions   = ["cloudfront:CreateInvalidation"]
     resources = [aws_cloudfront_distribution.site.arn]
+  }
+
+  dynamic "statement" {
+    for_each = var.default_viewer_request_function_arn == null ? [] : [var.default_viewer_request_function_arn]
+
+    content {
+      actions = [
+        "cloudfront:DescribeFunction",
+        "cloudfront:GetFunction",
+        "cloudfront:PublishFunction",
+        "cloudfront:UpdateFunction",
+      ]
+      resources = [statement.value]
+    }
   }
 }
 

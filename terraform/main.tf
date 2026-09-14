@@ -53,6 +53,15 @@ module "table" {
   prefix           = local.prefix
 }
 
+module "analytics" {
+  providers = { aws = aws, aws.us_east_1 = aws.us_east_1 }
+  source    = "./modules/analytics"
+
+  account_id = local.account_id
+  aws_region = var.aws_region
+  prefix     = local.prefix
+}
+
 module "sites" {
   source = "./modules/sites"
 
@@ -66,6 +75,7 @@ module "apps" {
 
   account_id        = local.account_id
   alerts_topic_arn  = module.alerts.topic_arn
+  analytics         = module.analytics.wiring
   aws_region        = var.aws_region
   oidc_provider_arn = module.github_oidc.provider_arn
   sites             = module.sites.wiring
@@ -76,4 +86,7 @@ module "apps" {
   donation_domain_live           = var.donation_domain_live
   donation_stripe_secret_key     = var.donation_stripe_secret_key
   donation_stripe_webhook_secret = var.donation_stripe_webhook_secret
+
+  shorten_origin_verify   = var.shorten_origin_verify
+  shorten_public_base_url = var.shorten_public_base_url
 }

@@ -10,6 +10,30 @@ variable "aws_region" {
   type = string
 }
 
+variable "analytics" {
+  default     = null
+  description = "The shared analytics stack: CloudFront standard logging v2 into its logs bucket, and Athena, Glue and S3 access for the app's functions; null leaves the app with none of it"
+
+  type = object({
+    athena_workgroup     = string
+    athena_workgroup_arn = string
+    glue_arns            = list(string)
+    glue_database        = string
+    glue_table           = string
+    log_destination_arn  = string
+    logs_bucket          = string
+    logs_bucket_arn      = string
+    results_bucket       = string
+    results_bucket_arn   = string
+  })
+}
+
+variable "api_cache_policy_id" {
+  default     = null
+  description = "Cache policy for the api behaviours; null takes the shared 30-second policy"
+  type        = string
+}
+
 variable "admins" {
   default     = null
   description = "A Cognito user pool for the app's administrators; null leaves the app without one"
@@ -32,17 +56,43 @@ variable "canary" {
 
 variable "custom_alarms" {
   default     = {}
-  description = "Alarms on the app's own EMF metrics, in the namespace named after the app"
+  description = "Alarms on the app's own EMF metrics, in the namespace named after the app, or on an AWS namespace when namespace and dimensions are given"
   type = map(object({
     comparison_operator = optional(string, "GreaterThanThreshold")
     description         = string
+    dimensions          = optional(map(string), {})
     evaluation_periods  = optional(number, 1)
     metric_name         = string
+    namespace           = optional(string)
     period              = number
     statistic           = string
     threshold           = number
     treat_missing_data  = optional(string, "notBreaching")
   }))
+}
+
+variable "default_cache_policy_id" {
+  default     = null
+  description = "Cache policy for the default behaviour; null takes the managed CachingOptimized policy"
+  type        = string
+}
+
+variable "default_origin_function" {
+  default     = null
+  description = "Serve the default behaviour from this function's url instead of the sites bucket; null keeps the S3 site origin"
+  type        = string
+}
+
+variable "default_origin_request_policy_id" {
+  default     = null
+  description = "Origin request policy for the default behaviour; null forwards nothing beyond the cache key"
+  type        = string
+}
+
+variable "default_viewer_request_function_arn" {
+  default     = null
+  description = "CloudFront function on the default behaviour's viewer request; null takes the shared router"
+  type        = string
 }
 
 variable "domain" {
@@ -108,6 +158,18 @@ variable "name" {
 
 variable "oidc_provider_arn" {
   type = string
+}
+
+variable "origin_header" {
+  default     = null
+  description = "Name of a header CloudFront adds to every request it sends to a function origin, carrying origin_header_value, so the function can refuse anything that bypassed CloudFront"
+  type        = string
+}
+
+variable "origin_header_value" {
+  default   = ""
+  sensitive = true
+  type      = string
 }
 
 variable "secrets" {

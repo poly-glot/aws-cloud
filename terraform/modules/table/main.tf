@@ -63,6 +63,11 @@ resource "aws_dynamodb_table" "shared" {
   point_in_time_recovery {
     enabled = false
   }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "throttles" {

@@ -4,7 +4,14 @@ data "aws_servicequotas_service_quota" "lambda_concurrency" {
 }
 
 locals {
-  base_env = merge({ METRIC_NAMESPACE = var.name, TABLE_NAME = var.table.name }, var.env, var.secrets)
+  analytics_env = var.analytics == null ? {} : {
+    ATHENA_OUTPUT    = "s3://${var.analytics.results_bucket}/"
+    ATHENA_WORKGROUP = var.analytics.athena_workgroup
+    GLUE_DATABASE    = var.analytics.glue_database
+    GLUE_TABLE       = var.analytics.glue_table
+    LOGS_BUCKET      = var.analytics.logs_bucket
+  }
+  base_env = merge({ METRIC_NAMESPACE = var.name, TABLE_NAME = var.table.name }, local.analytics_env, var.env, var.secrets)
   console_env = var.admins == null ? {} : {
     COGNITO_CLIENT_ID = aws_cognito_user_pool_client.console[0].id
     COGNITO_ISSUER    = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.admins[0].id}"
