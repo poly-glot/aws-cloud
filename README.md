@@ -250,7 +250,7 @@ the cache and lands in `cs-uri-query` on every log line, including cache hits, w
 analytics free of any per-click write.
 
 Its source is `edge/segment.js` in the shorten repository, and Terraform cannot read across repositories.
-So this repo commits a placeholder body and `lifecycle { ignore_changes = [code] }`, the same split that
+So this repo commits a placeholder body and `lifecycle { ignore_changes = [code, comment] }`, the same split that
 `placeholder.zip` gives the Lambdas, and the app's deploy workflow publishes the real thing:
 
 ```bash
@@ -263,7 +263,9 @@ aws cloudfront publish-function --name shorten-segment --if-match "$ETAG"
 The placeholder emits `s=XX%7CXX%7Cother%7Cother`, which is the same value the real function emits for a
 viewer it cannot classify, so a distribution running the placeholder answers correctly from the default
 URL rather than erroring. The separator is percent-encoded because a Lambda function URL refuses a raw `|`
-in a query string with a 400 before the function is invoked; the redirect decodes it.
+in a query string with a 400 before the function is invoked; the redirect decodes it. The comment is
+ignored alongside the code: `update-function` cannot be called without one, so the deploy sends its own,
+and an apply that put the placeholder's comment back would republish the function on every run.
 
 ### Why the headers are on the origin request policy
 

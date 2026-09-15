@@ -27,7 +27,7 @@ resource "aws_cloudfront_function" "shorten_segment" {
   runtime = "cloudfront-js-2.0"
 
   lifecycle {
-    ignore_changes = [code]
+    ignore_changes = [code, comment]
   }
 }
 
