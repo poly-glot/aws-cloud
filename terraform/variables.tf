@@ -45,6 +45,12 @@ variable "donation_stripe_webhook_secret" {
   type      = string
 }
 
+variable "shorten_domain_live" {
+  default     = false
+  description = "Serve the shorten site on its custom domain; set once its certificate is issued"
+  type        = bool
+}
+
 variable "shorten_public_base_url" {
   default     = ""
   description = "Origin of the short links the shorten mgmt function hands out, https://<distribution_domain> or the custom domain; set after the first apply, once the distribution has a name. Empty makes the function fall back to the request host, which behind CloudFront is the raw function URL"

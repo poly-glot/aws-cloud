@@ -87,6 +87,7 @@ module "apps" {
   donation_stripe_secret_key     = var.donation_stripe_secret_key
   donation_stripe_webhook_secret = var.donation_stripe_webhook_secret
 
+  shorten_domain_live     = var.shorten_domain_live
   shorten_origin_verify   = var.shorten_origin_verify
   shorten_public_base_url = var.shorten_public_base_url
 }
