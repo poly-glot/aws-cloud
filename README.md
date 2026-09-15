@@ -260,9 +260,10 @@ aws cloudfront update-function --name shorten-segment --function-stage DEVELOPME
 aws cloudfront publish-function --name shorten-segment --if-match "$ETAG"
 ```
 
-The placeholder emits `s=XX|XX|other|other`, which is the same value the real function emits for a
+The placeholder emits `s=XX%7CXX%7Cother%7Cother`, which is the same value the real function emits for a
 viewer it cannot classify, so a distribution running the placeholder answers correctly from the default
-URL rather than erroring.
+URL rather than erroring. The separator is percent-encoded because a Lambda function URL refuses a raw `|`
+in a query string with a 400 before the function is invoked; the redirect decodes it.
 
 ### Why the headers are on the origin request policy
 

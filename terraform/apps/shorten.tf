@@ -17,7 +17,7 @@ resource "aws_cloudfront_function" "shorten_segment" {
   code    = <<-JS
     function handler(event) {
         var request = event.request;
-        request.querystring = { s: { value: 'XX|XX|other|other' } };
+        request.querystring = { s: { value: 'XX%7CXX%7Cother%7Cother' } };
         return request;
     }
   JS
