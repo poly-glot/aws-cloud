@@ -98,6 +98,7 @@ module "shorten" {
   default_origin_function             = "redirect"
   default_origin_request_policy_id    = aws_cloudfront_origin_request_policy.shorten.id
   default_viewer_request_function_arn = aws_cloudfront_function.shorten_segment.arn
+  domain                              = { live = var.shorten_domain_live, name = "shorten.junaid.guru" }
   key_prefix                          = "shorten#"
 
   origin_header       = "X-Origin-Verify"

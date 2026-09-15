@@ -53,6 +53,11 @@ variable "donation_stripe_webhook_secret" {
   type      = string
 }
 
+variable "shorten_domain_live" {
+  default = false
+  type    = bool
+}
+
 variable "shorten_origin_verify" {
   sensitive = true
   type      = string

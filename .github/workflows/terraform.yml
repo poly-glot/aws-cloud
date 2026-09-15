@@ -27,6 +27,7 @@ env:
   TF_VAR_donation_domain_live: ${{ vars.DONATION_DOMAIN_LIVE || 'false' }}
   TF_VAR_donation_stripe_secret_key: ${{ secrets.DONATION_STRIPE_SECRET_KEY }}
   TF_VAR_donation_stripe_webhook_secret: ${{ secrets.DONATION_STRIPE_WEBHOOK_SECRET }}
+  TF_VAR_shorten_domain_live: ${{ vars.SHORTEN_DOMAIN_LIVE || 'false' }}
   TF_VAR_shorten_origin_verify: ${{ secrets.SHORTEN_ORIGIN_VERIFY }}
   TF_VAR_shorten_public_base_url: ${{ vars.SHORTEN_PUBLIC_BASE_URL }}
   TF_VERSION: '1.14.8'

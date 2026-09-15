@@ -115,6 +115,7 @@ repository settings:
 | secret   | `SHORTEN_ORIGIN_VERIFY`          | long random string CloudFront sends the shorten functions as `X-Origin-Verify` |
 | variable | `DONATION_CONSOLE_URL`           | `<site_url>/admin.html`, see Administrator sign-in               |
 | variable | `DONATION_DOMAIN_LIVE`           | `true` once the certificate is issued, see Custom domains        |
+| variable | `SHORTEN_DOMAIN_LIVE`            | `true` once the certificate is issued, see Custom domains        |
 | variable | `SHORTEN_PUBLIC_BASE_URL`        | `https://<distribution_domain>`, set after the first apply, see The shorten app |
 
 ```bash
