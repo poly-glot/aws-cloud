@@ -133,6 +133,7 @@ resource "aws_cloudwatch_log_delivery" "site" {
 
   delivery_destination_arn = var.analytics.log_destination_arn
   delivery_source_name     = aws_cloudwatch_log_delivery_source.site[0].name
+  record_fields            = var.analytics.log_record_fields
 
   s3_delivery_configuration {
     enable_hive_compatible_path = false

@@ -21,6 +21,7 @@ variable "analytics" {
     glue_database        = string
     glue_table           = string
     log_destination_arn  = string
+    log_record_fields    = list(string)
     logs_bucket          = string
     logs_bucket_arn      = string
     results_bucket       = string
