@@ -64,7 +64,13 @@ Every `apps/<name>.tf` produces, from one module call:
   brings its own viewer-request CloudFront function, update and publish that function too
 - one Lambda per entry in `functions`, named `<app>-<key>`, on `provided.al2023` arm64 with the committed
   `placeholder.zip` as its body until the app deploys; optional public function URL, schedule, reserved
-  concurrency, alarms
+  concurrency, alarms, and a log retention other than 90 days. An app on a managed runtime sets
+  `runtime` once and a `handler` per function
+- optionally SQS queues with dead-letter queues that trigger a function (`queues`), SNS topics a function
+  subscribes to (`topics`), a self-sign-up Cognito user pool (`users`), a media bucket served at
+  `/media/*` (`media`), and Logs Insights over the log groups of functions marked `queryable`; each
+  new resource's URL, ARN or id reaches every function's environment under the name the app chooses, and
+  the runtime role may use exactly those resources
 - a CloudFront distribution serving `s3://<bucket>/<app>/` with client-side routing, and `/api*` proxied
   to the function marked `url = "api"` with the prefix stripped and GETs cached for 30 seconds; an app
   that sets `default_origin_function` puts a function on the default behaviour instead of the bucket,
@@ -362,6 +368,52 @@ Three, and no more, because the ten free alarms were already spent: `shorten-red
 `AWS/Lambda` `Errors` for `shorten-rollup` over a 24-hour period with `treat_missing_data = "breaching"`,
 so a night where the rollup did not run at all alarms exactly like a night where it crashed. No canary:
 the redirect path is the site, and the redirect errors alarm already covers it.
+
+## The txtlocal app
+
+`apps/txtlocal.tf` is the txtlocal repository, the SMS platform: eleven Python functions on
+`python3.14` arm64 sharing one artifact and differing only in their `handler`.
+
+| Function | Trigger |
+|---|---|
+| `api` | behind `/api*`, unstripped; Logs Insights over its own 7-day log group |
+| `redirect` | behind `/l*`, no viewer-request function, so it sees `/l/{code}` |
+| `stripe-webhook` | public function URL |
+| `send-worker` | queue `send-jobs`, batches of 10, at most two at once; 120-day log group, queryable |
+| `delivery-events`, `inbound` | topics `sms-events` and `sms-inbound` |
+| `webhook-dispatch` | queue `webhooks`, one message at a time, at most two at once |
+| `billing-charge` | queue `recharge`, reserved concurrency 1 |
+| `scheduler`, `billing-renewals`, `rollup` | `rate(1 minute)`, `cron(30 6 * * ? *)`, `cron(30 2 * * ? *)` |
+
+It sets `strip_api_prefix = false` because its routes are `/api/app/...`, `/api/v3/...` and
+`/api/health` in full, and the shared router's strip would 404 every one. The router's other branch,
+rewriting a path without a dot to `/index.html`, would turn `/l/{code}` into a page request, so a
+non-`api` path never gets it. A message that fails three receives lands on the queue's `-dlq`.
+
+The site signs in with the `users` pool at `txtlocal-users.auth.eu-west-2.amazoncognito.com`, and
+every function gets its ids as `COGNITO_CLIENT_ID`, `COGNITO_ISSUER` and `COGNITO_USER_POOL_ID`. MMS
+media goes to `txtlocal-media-<account-id>`: the api presigns a PUT under `media/`, the browser uploads
+there directly, which the bucket's CORS rule allows from the site's two origins, and the distribution
+serves the file back at `/media/*`. The site deploy's `--delete` sync never touches it, because it is a
+separate bucket.
+
+The first deploy runs `SMS_MODE=fake` and, until `TXTLOCAL_STRIPE_SECRET_KEY` is set, the scripted fake
+payment gateway, so nothing sends a message or charges a card. End User Messaging's configuration set and
+protect configuration, and the three alarms txtlocal budgets for, come with the move to `dryrun`.
+
+Before the first apply, set two repository secrets, each at least 32 random characters; the plan fails
+without them, because an empty operator secret would open the operator routes and an empty unsubscribe
+key would let anyone forge unsubscribe links:
+
+```bash
+openssl rand -hex 32 | gh secret set TXTLOCAL_OPERATOR_SECRET -R poly-glot/aws-cloud
+openssl rand -hex 32 | gh secret set TXTLOCAL_UNSUBSCRIBE_SECRET -R poly-glot/aws-cloud
+```
+
+After the apply, add the `domain_validation` record from the `apps` output to `junaid.guru`'s DNS, and set
+`TXTLOCAL_DOMAIN_LIVE` to `true` once the certificate is issued. The txtlocal repository needs the three
+onboarding values plus `COGNITO_CLIENT_ID` and `COGNITO_DOMAIN` from the output, and its own
+`STRIPE_PUBLISHABLE_KEY`.
 
 ## Administrator sign-in
 

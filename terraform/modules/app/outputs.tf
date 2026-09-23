@@ -1,7 +1,7 @@
 output "wiring" {
   value = {
-    cognito_client_id   = one(aws_cognito_user_pool_client.console[*].id)
-    cognito_domain      = var.admins == null ? null : "https://${aws_cognito_user_pool_domain.admins[0].domain}.auth.${var.aws_region}.amazoncognito.com"
+    cognito_client_id   = one(concat(aws_cognito_user_pool_client.console[*].id, aws_cognito_user_pool_client.users[*].id))
+    cognito_domain      = one([for domain in concat(aws_cognito_user_pool_domain.admins, aws_cognito_user_pool_domain.users) : "https://${domain.domain}.auth.${var.aws_region}.amazoncognito.com"])
     deploy_role_arn     = aws_iam_role.deploy.arn
     distribution_domain = aws_cloudfront_distribution.site.domain_name
     distribution_id     = aws_cloudfront_distribution.site.id

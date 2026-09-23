@@ -69,6 +69,16 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
+  dynamic "origin" {
+    for_each = aws_s3_bucket.media[*].bucket_regional_domain_name
+
+    content {
+      domain_name              = origin.value
+      origin_access_control_id = var.sites.s3_oac_id
+      origin_id                = "media"
+    }
+  }
+
   default_cache_behavior {
     allowed_methods          = ["GET", "HEAD"]
     cache_policy_id          = coalesce(var.default_cache_policy_id, local.managed_cache_optimized)
@@ -97,10 +107,28 @@ resource "aws_cloudfront_distribution" "site" {
       target_origin_id         = ordered_cache_behavior.value
       viewer_protocol_policy   = "https-only"
 
-      function_association {
-        event_type   = "viewer-request"
-        function_arn = var.sites.router_function_arn
+      dynamic "function_association" {
+        for_each = var.strip_api_prefix && startswith(ordered_cache_behavior.value, "api") ? [var.sites.router_function_arn] : []
+
+        content {
+          event_type   = "viewer-request"
+          function_arn = function_association.value
+        }
       }
+    }
+  }
+
+  dynamic "ordered_cache_behavior" {
+    for_each = aws_s3_bucket.media[*].id
+
+    content {
+      allowed_methods        = ["GET", "HEAD"]
+      cache_policy_id        = local.managed_cache_optimized
+      cached_methods         = ["GET", "HEAD"]
+      compress               = true
+      path_pattern           = "/media/*"
+      target_origin_id       = "media"
+      viewer_protocol_policy = "redirect-to-https"
     }
   }
 

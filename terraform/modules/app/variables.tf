@@ -112,22 +112,25 @@ variable "env" {
 }
 
 variable "functions" {
-  description = "One Lambda per key, named <app>-<key>; url is null, public, or a site path such as api or api/admin"
+  description = "One Lambda per key, named <app>-<key>; url is null, public, or a site path such as api, api/admin or l; queryable lets the app's functions run Logs Insights over the function's log group"
   type = map(object({
-    concurrency     = optional(number, -1)
-    console         = optional(bool, false)
-    env             = optional(map(string), {})
-    errors_alarm    = optional(bool, false)
-    memory          = optional(number, 256)
-    schedule        = optional(string)
-    throttles_alarm = optional(bool, false)
-    timeout         = optional(number, 30)
-    url             = optional(string)
+    concurrency        = optional(number, -1)
+    console            = optional(bool, false)
+    env                = optional(map(string), {})
+    errors_alarm       = optional(bool, false)
+    handler            = optional(string, "bootstrap")
+    log_retention_days = optional(number, 90)
+    memory             = optional(number, 256)
+    queryable          = optional(bool, false)
+    schedule           = optional(string)
+    throttles_alarm    = optional(bool, false)
+    timeout            = optional(number, 30)
+    url                = optional(string)
   }))
 
   validation {
-    condition     = alltrue([for function in var.functions : function.url == null || can(regex("^(public|api(/[a-z0-9-]+)?)$", function.url))])
-    error_message = "url must be null, \"public\", \"api\" or \"api/<segment>\"."
+    condition     = alltrue([for function in var.functions : function.url == null || can(regex("^(public|[a-z]+|api/[a-z0-9-]+)$", function.url))])
+    error_message = "url must be null, \"public\", a top-level segment such as \"api\" or \"l\", or \"api/<segment>\"."
   }
 
   validation {
@@ -153,6 +156,12 @@ variable "key_prefix" {
   type        = string
 }
 
+variable "media" {
+  default     = false
+  description = "A media bucket, <app>-media-<account>, that the app's functions presign uploads into under media/ and its distribution serves at /media/*"
+  type        = bool
+}
+
 variable "name" {
   type = string
 }
@@ -173,10 +182,35 @@ variable "origin_header_value" {
   type      = string
 }
 
+variable "queues" {
+  default     = {}
+  description = "One SQS queue per key, <app>-<key>, triggering the consumer function, with a dead-letter queue that takes a message after max_receive_count receives; env names the variable that carries its URL to every function"
+
+  type = map(object({
+    batch_size        = optional(number, 10)
+    consumer          = string
+    env               = string
+    max_concurrency   = optional(number)
+    max_receive_count = optional(number, 3)
+  }))
+}
+
+variable "runtime" {
+  default     = "provided.al2023"
+  description = "The Lambda runtime of every function in the app"
+  type        = string
+}
+
 variable "secrets" {
   default   = {}
   sensitive = true
   type      = map(string)
+}
+
+variable "strip_api_prefix" {
+  default     = true
+  description = "Run the shared router on the api behaviours, which strips /api before a function sees the path; false forwards every path unchanged"
+  type        = bool
 }
 
 variable "sites" {
@@ -194,5 +228,25 @@ variable "table" {
   type = object({
     arn  = string
     name = string
+  })
+}
+
+variable "topics" {
+  default     = {}
+  description = "One SNS topic per key, <app>-<key>, subscribed by the subscriber function; env names the variable that carries its ARN to every function"
+
+  type = map(object({
+    env        = string
+    subscriber = string
+  }))
+}
+
+variable "users" {
+  default     = null
+  description = "A self-sign-up Cognito user pool with a hosted sign-in page; every function gets COGNITO_CLIENT_ID, COGNITO_ISSUER and COGNITO_USER_POOL_ID and may create users in it; null leaves the app without one"
+
+  type = object({
+    callback_urls = list(string)
+    logout_urls   = list(string)
   })
 }

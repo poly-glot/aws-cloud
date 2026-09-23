@@ -11,23 +11,32 @@ locals {
     GLUE_TABLE       = var.analytics.glue_table
     LOGS_BUCKET      = var.analytics.logs_bucket
   }
-  base_env = merge({ METRIC_NAMESPACE = var.name, TABLE_NAME = var.table.name }, local.analytics_env, var.env, var.secrets)
+  base_env = merge({ METRIC_NAMESPACE = var.name, TABLE_NAME = var.table.name }, local.analytics_env, local.media_env, local.queue_env, local.topic_env, local.users_env, var.env, var.secrets)
   console_env = var.admins == null ? {} : {
     COGNITO_CLIENT_ID = aws_cognito_user_pool_client.console[0].id
     COGNITO_ISSUER    = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.admins[0].id}"
   }
   canary_schedule = try(var.canary.interval_minutes, 1) == 1 ? "rate(1 minute)" : "rate(${try(var.canary.interval_minutes, 1)} minutes)"
+  media_env       = var.media ? { MEDIA_BUCKET = aws_s3_bucket.media[0].bucket } : {}
+  queryable       = [for key, function in var.functions : key if function.queryable]
+  queue_env       = { for key, queue in var.queues : queue.env => aws_sqs_queue.this[key].url }
   reservable      = data.aws_servicequotas_service_quota.lambda_concurrency.value > 100
   routed          = { for key, function in var.functions : function.url => key if function.url != null && function.url != "public" }
   scheduled       = { for key, function in var.functions : key => function.schedule if function.schedule != null }
-  with_url        = { for key, function in var.functions : key => function.url if function.url != null }
+  topic_env       = { for key, topic in var.topics : topic.env => aws_sns_topic.this[key].arn }
+  users_env = var.users == null ? {} : {
+    COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.users[0].id
+    COGNITO_ISSUER       = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.users[0].id}"
+    COGNITO_USER_POOL_ID = aws_cognito_user_pool.users[0].id
+  }
+  with_url = { for key, function in var.functions : key => function.url if function.url != null }
 }
 
 resource "aws_cloudwatch_log_group" "functions" {
   for_each = var.functions
 
   name              = "/aws/lambda/${var.name}-${each.key}"
-  retention_in_days = 90
+  retention_in_days = each.value.log_retention_days
 }
 
 resource "aws_lambda_function" "this" {
@@ -36,11 +45,11 @@ resource "aws_lambda_function" "this" {
   architectures                  = ["arm64"]
   filename                       = "${path.module}/placeholder.zip"
   function_name                  = "${var.name}-${each.key}"
-  handler                        = "bootstrap"
+  handler                        = each.value.handler
   memory_size                    = each.value.memory
   reserved_concurrent_executions = local.reservable ? each.value.concurrency : -1
   role                           = aws_iam_role.runtime.arn
-  runtime                        = "provided.al2023"
+  runtime                        = var.runtime
   source_code_hash               = filebase64sha256("${path.module}/placeholder.zip")
   timeout                        = each.value.timeout
 
