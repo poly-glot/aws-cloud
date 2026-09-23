@@ -37,6 +37,35 @@ locals {
       resources = [var.analytics.results_bucket_arn, "${var.analytics.results_bucket_arn}/*"]
     },
   ]
+  queryable_log_groups = [for key in local.queryable : "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/${var.name}-${key}"]
+  resource_statements = concat(
+    length(var.queues) == 0 ? [] : [{
+      actions   = ["sqs:ChangeMessageVisibility", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ReceiveMessage", "sqs:SendMessage"]
+      resources = [for queue in aws_sqs_queue.this : queue.arn]
+    }],
+    length(var.topics) == 0 ? [] : [{
+      actions   = ["sns:Publish"]
+      resources = [for topic in aws_sns_topic.this : topic.arn]
+    }],
+    var.users == null ? [] : [{
+      actions   = ["cognito-idp:AdminCreateUser"]
+      resources = aws_cognito_user_pool.users[*].arn
+    }],
+    var.media ? [{
+      actions   = ["s3:PutObject"]
+      resources = [for bucket in aws_s3_bucket.media : "${bucket.arn}/media/*"]
+    }] : [],
+    length(local.queryable) == 0 ? [] : [
+      {
+        actions   = ["logs:StartQuery"]
+        resources = concat(local.queryable_log_groups, [for group in local.queryable_log_groups : "${group}:*"])
+      },
+      {
+        actions   = ["logs:GetQueryResults", "logs:StopQuery"]
+        resources = ["*"]
+      },
+    ],
+  )
 }
 
 data "aws_iam_policy_document" "runtime_trust" {
@@ -78,6 +107,15 @@ data "aws_iam_policy_document" "runtime" {
   statement {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/${var.name}-*"]
+  }
+
+  dynamic "statement" {
+    for_each = local.resource_statements
+
+    content {
+      actions   = statement.value.actions
+      resources = statement.value.resources
+    }
   }
 
   dynamic "statement" {

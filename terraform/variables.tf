@@ -63,3 +63,46 @@ variable "shorten_origin_verify" {
   sensitive   = true
   type        = string
 }
+
+variable "txtlocal_domain_live" {
+  default     = false
+  description = "Serve the txtlocal site on its custom domain; set once its certificate is issued"
+  type        = bool
+}
+
+variable "txtlocal_operator_secret" {
+  default     = ""
+  description = "The header value that authorises txtlocal's operator routes, such as approving a website registration"
+  sensitive   = true
+  type        = string
+
+  validation {
+    condition     = length(var.txtlocal_operator_secret) >= 32
+    error_message = "Set TXTLOCAL_OPERATOR_SECRET to at least 32 random characters; an empty one would open the operator routes."
+  }
+}
+
+variable "txtlocal_stripe_secret_key" {
+  default     = ""
+  description = "Stripe secret key for txtlocal; empty runs the deployed site on the scripted fake payment gateway"
+  sensitive   = true
+  type        = string
+}
+
+variable "txtlocal_stripe_webhook_secret" {
+  default   = ""
+  sensitive = true
+  type      = string
+}
+
+variable "txtlocal_unsubscribe_secret" {
+  default     = ""
+  description = "HMAC key that signs txtlocal's per-recipient unsubscribe links"
+  sensitive   = true
+  type        = string
+
+  validation {
+    condition     = length(var.txtlocal_unsubscribe_secret) >= 32
+    error_message = "Set TXTLOCAL_UNSUBSCRIBE_SECRET to at least 32 random characters; an empty key would let anyone forge unsubscribe links."
+  }
+}

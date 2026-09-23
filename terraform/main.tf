@@ -90,4 +90,10 @@ module "apps" {
   shorten_domain_live     = var.shorten_domain_live
   shorten_origin_verify   = var.shorten_origin_verify
   shorten_public_base_url = var.shorten_public_base_url
+
+  txtlocal_domain_live           = var.txtlocal_domain_live
+  txtlocal_operator_secret       = var.txtlocal_operator_secret
+  txtlocal_stripe_secret_key     = var.txtlocal_stripe_secret_key
+  txtlocal_stripe_webhook_secret = var.txtlocal_stripe_webhook_secret
+  txtlocal_unsubscribe_secret    = var.txtlocal_unsubscribe_secret
 }

@@ -68,6 +68,31 @@ variable "shorten_public_base_url" {
   type = string
 }
 
+variable "txtlocal_domain_live" {
+  default = false
+  type    = bool
+}
+
+variable "txtlocal_operator_secret" {
+  sensitive = true
+  type      = string
+}
+
+variable "txtlocal_stripe_secret_key" {
+  sensitive = true
+  type      = string
+}
+
+variable "txtlocal_stripe_webhook_secret" {
+  sensitive = true
+  type      = string
+}
+
+variable "txtlocal_unsubscribe_secret" {
+  sensitive = true
+  type      = string
+}
+
 variable "sites" {
   type = object({
     api_cache_policy_id = string
