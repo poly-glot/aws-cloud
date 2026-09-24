@@ -207,6 +207,12 @@ variable "secrets" {
   type      = map(string)
 }
 
+variable "seed_partition" {
+  default     = null
+  description = "When set, the deploy role may put items into this one partition, so the app repo's deploy can write rows its code defines, such as a price list"
+  type        = string
+}
+
 variable "strip_api_prefix" {
   default     = true
   description = "Run the shared router on the api behaviours, which strips /api before a function sees the path; false forwards every path unchanged"

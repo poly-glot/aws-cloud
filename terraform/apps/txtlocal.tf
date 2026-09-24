@@ -16,6 +16,7 @@ module "txtlocal" {
   key_prefix       = "txtlocal#"
   media            = true
   runtime          = "python3.14"
+  seed_partition   = "txtlocal#PLATFORM"
   strip_api_prefix = false
 
   env = {
