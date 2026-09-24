@@ -390,6 +390,10 @@ It sets `strip_api_prefix = false` because its routes are `/api/app/...`, `/api/
 rewriting a path without a dot to `/index.html`, would turn `/l/{code}` into a page request, so a
 non-`api` path never gets it. A message that fails three receives lands on the queue's `-dlq`.
 
+It sets `seed_partition = "txtlocal#PLATFORM"`: its deploy role may `PutItem` into that one partition
+and nothing else, so the txtlocal deploy writes the rates, packs and number prices its
+`entrypoints/seed.py` defines on every release.
+
 The site signs in with the `users` pool at `txtlocal-users.auth.eu-west-2.amazoncognito.com`, and
 every function gets its ids as `COGNITO_CLIENT_ID`, `COGNITO_ISSUER` and `COGNITO_USER_POOL_ID`. MMS
 media goes to `txtlocal-media-<account-id>`: the api presigns a PUT under `media/`, the browser uploads

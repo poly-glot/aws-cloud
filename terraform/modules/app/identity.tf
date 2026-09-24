@@ -190,6 +190,21 @@ data "aws_iam_policy_document" "deploy" {
   }
 
   dynamic "statement" {
+    for_each = var.seed_partition == null ? [] : [var.seed_partition]
+
+    content {
+      actions   = ["dynamodb:PutItem"]
+      resources = [var.table.arn]
+
+      condition {
+        test     = "ForAllValues:StringEquals"
+        values   = [statement.value]
+        variable = "dynamodb:LeadingKeys"
+      }
+    }
+  }
+
+  dynamic "statement" {
     for_each = var.default_viewer_request_function_arn == null ? [] : [var.default_viewer_request_function_arn]
 
     content {
