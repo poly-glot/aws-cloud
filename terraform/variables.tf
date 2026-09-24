@@ -84,15 +84,26 @@ variable "txtlocal_operator_secret" {
 
 variable "txtlocal_stripe_secret_key" {
   default     = ""
-  description = "Stripe secret key for txtlocal; empty runs the deployed site on the scripted fake payment gateway"
+  description = "Secret key of txtlocal's own Stripe sandbox, or its live key once the runbook goes live"
   sensitive   = true
   type        = string
+
+  validation {
+    condition     = can(regex("^(sk|rk)_(test|live)_", var.txtlocal_stripe_secret_key))
+    error_message = "Set TXTLOCAL_STRIPE_SECRET_KEY to the secret key of txtlocal's Stripe sandbox; txtlocal has no fake payment gateway."
+  }
 }
 
 variable "txtlocal_stripe_webhook_secret" {
-  default   = ""
-  sensitive = true
-  type      = string
+  default     = ""
+  description = "Signing secret of the Stripe endpoint pointed at txtlocal's stripe-webhook function URL"
+  sensitive   = true
+  type        = string
+
+  validation {
+    condition     = startswith(var.txtlocal_stripe_webhook_secret, "whsec_")
+    error_message = "Set TXTLOCAL_STRIPE_WEBHOOK_SECRET to the whsec_ signing secret of the endpoint at txtlocal's stripe-webhook URL; an empty one refuses every Stripe event."
+  }
 }
 
 variable "txtlocal_unsubscribe_secret" {
