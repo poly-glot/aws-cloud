@@ -397,9 +397,9 @@ there directly, which the bucket's CORS rule allows from the site's two origins,
 serves the file back at `/media/*`. The site deploy's `--delete` sync never touches it, because it is a
 separate bucket.
 
-The first deploy runs `SMS_MODE=fake` and, until `TXTLOCAL_STRIPE_SECRET_KEY` is set, the scripted fake
-payment gateway, so nothing sends a message or charges a card. End User Messaging's configuration set and
-protect configuration, and the three alarms txtlocal budgets for, come with the move to `dryrun`.
+txtlocal runs `SMS_MODE=fake`, so nothing sends a message, and pays through a Stripe sandbox of its own,
+so nothing charges a real card. End User Messaging's configuration set and protect configuration, and the
+three alarms txtlocal budgets for, come with the move to `dryrun`.
 
 Before the first apply, set two repository secrets, each at least 32 random characters; the plan fails
 without them, because an empty operator secret would open the operator routes and an empty unsubscribe
@@ -410,10 +410,15 @@ openssl rand -hex 32 | gh secret set TXTLOCAL_OPERATOR_SECRET -R poly-glot/aws-c
 openssl rand -hex 32 | gh secret set TXTLOCAL_UNSUBSCRIBE_SECRET -R poly-glot/aws-cloud
 ```
 
+The plan also refuses to run without the sandbox's two Stripe values, since txtlocal has no fake payment
+gateway: `TXTLOCAL_STRIPE_SECRET_KEY`, the sandbox's secret key, and `TXTLOCAL_STRIPE_WEBHOOK_SECRET`,
+the `whsec_` signing secret of the sandbox endpoint pointed at the `stripe-webhook` function URL (in the
+`apps` output under `function_urls`) for `checkout.session.completed`, `payment_intent.succeeded` and
+`setup_intent.succeeded`.
+
 After the apply, add the `domain_validation` record from the `apps` output to `junaid.guru`'s DNS, and set
 `TXTLOCAL_DOMAIN_LIVE` to `true` once the certificate is issued. The txtlocal repository needs the three
-onboarding values plus `COGNITO_CLIENT_ID` and `COGNITO_DOMAIN` from the output, and its own
-`STRIPE_PUBLISHABLE_KEY`.
+onboarding values plus `COGNITO_CLIENT_ID` and `COGNITO_DOMAIN` from the output.
 
 ## Administrator sign-in
 
